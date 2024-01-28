@@ -5,21 +5,30 @@ from mido import MidiFile
 import mido
 
 
-args = sys.argv
+class Reader:
+    def __init__(self):
+        self.port = mido.open_output()
 
-if len(args) != 2:
-    print("Usage: reader.py <.mid file to read>")
-    exit()
+    def open_file(self, filename: str):
+        try:
+            filename = f"audio/{filename}.mid"
+            self.midi_file = MidiFile(filename)
+        except FileNotFoundError:
+            print(f"File {filename}.mid not found")
 
-try:
-    filename = args[1]
-    mid = MidiFile(f"audio/{filename}.mid")
-    port = mido.open_output()
+    def play(self):
+        for msg in self.midi_file.play():
+            print(msg)
+            self.port.send(msg)
+        time.sleep(1)  # buffer to finish messages
 
-    # mid.print_tracks()
-    for msg in mid.play():
-        print(msg)
-        port.send(msg)
-    time.sleep(1)  # buffer to finish messages
-except FileNotFoundError:
-    print(f"File {filename}.mid not found")
+
+if __name__ == "__main__":
+    args = sys.argv
+    if len(args) != 2:
+        print("Usage: reader.py <.mid file to read>")
+        exit()
+
+    reader = Reader()
+    reader.open_file(filename=args[1])
+    reader.play()
