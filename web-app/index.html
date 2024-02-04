@@ -1,0 +1,79 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV App</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+	<div class="w-full h-[100px] bg-slate-300">
+	<div class="w-[60%] h-8 bg-slate-300 flex space-x-24 ml-8 pt-8">
+		<a
+	class="cursor-pointer text-xl my-auto font-medium text-gray-800 relative before:content-[''] before:absolute before:block before:w-full before:h-[2px] 
+			before:bottom-0 before:left-0 before:bg-gray-800
+			before:hover:scale-x-100 before:scale-x-0 before:origin-top-left
+			before:transition before:ease-in-out before:duration-300"
+	>Home</a>
+	<a
+	class="cursor-pointer text-xl my-auto font-medium text-gray-800 relative before:content-[''] before:absolute before:block before:w-full before:h-[2px] 
+			before:bottom-0 before:left-0 before:bg-gray-800
+			before:hover:scale-x-100 before:scale-x-0 before:origin-top-left
+			before:transition before:ease-in-out before:duration-300"
+	>Song List</a>
+		<a
+	class="cursor-pointer text-xl my-auto font-medium text-gray-800 relative before:content-[''] before:absolute before:block before:w-full before:h-[2px] 
+			before:bottom-0 before:left-0 before:bg-gray-800
+			before:hover:scale-x-100 before:scale-x-0 before:origin-top-left
+			before:transition before:ease-in-out before:duration-300"
+	>Progress</a>
+		<a
+	class="cursor-pointer text-xl my-auto font-medium text-gray-800 relative before:content-[''] before:absolute before:block before:w-full before:h-[2px] 
+			before:bottom-0 before:left-0 before:bg-gray-800
+			before:hover:scale-x-100 before:scale-x-0 before:origin-top-left
+			before:transition before:ease-in-out before:duration-300"
+	>Options</a>
+	</div>
+	<div class="text-gray-800 text-4xl font-bold absolute right-0 mr-8 -mt-2">pianAI</div>
+	</div>
+	
+	<div class = "grid grid-cols-3 w-full">
+		<div class="col-span-2 w-[96%] ml-[1%] pt-[2%]">
+			<div class="w-[100%] bg-slate-500 h-[36rem] rounded-lg">
+				<img class="w-[74%] ml-[13%] pt-[2%]" id="cvVideo" src="{{ url_for('video_feed') }}" alt="CV Video">
+			</div>
+		</div>
+		<div class = "col-span-1 w-[96%] ml-[1%] pt-[4%]">
+			<div class="w-[100%] bg-gray-500 h-[36rem] rounded-lg py-3 space-y-4 grid grid-cols-1 grid-rows-5">
+				<div class="row-span-3">
+					<div class="w-[95%] ml-[2.5%] bg-gray-600 rounded-lg h-[100%]">
+						<p id="handCoordinates">class="ml-4">{{ text_to_display }}</p>
+					</div>
+				</div>
+				<div class="row-span-2">
+					<div class="w-[95%] ml-[2.5%] bg-gray-600 rounded-lg h-[100%]">
+						<p class="ml-8">Score</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+    <script>
+        const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoElement = document.getElementById('cvVideo');
+            const handCoordinatesElement = document.getElementById('handCoordinates');
+
+            socket.on('update', (data) => {
+                videoElement.src = "data:image/jpeg;base64," + btoa(String.fromCharCode.apply(null, new Uint8Array(data.image)));
+                handCoordinatesElement.innerText = data.text;
+            });
+        });
+    </script>
+</body>
+</html>
