@@ -4,13 +4,19 @@ import time
 from mido import MidiFile
 import mido
 
+import pandas as pd
+from bokeh.io import output_file, show
+from bokeh.models import ColumnDataSource
+from bokeh.layouts import row
+from bokeh.plotting import figure
 
 class Reader:
     def __init__(self):
         self.port = mido.open_output()
         self.compare_midi_file = MidiFile(
-            "audio/compare.mid"
+            "audio/ref3.mid"
         )  # TODO: change to arg
+        self.review = []
 
     def open_file(self, filename: str):
         try:
@@ -49,7 +55,6 @@ class Reader:
 
         print(notes)
         print(compare_notes)
-        review = []
         i, j = 0, 0
         while i < len(notes) and j < len(compare_notes):
             played = notes[i]
@@ -69,16 +74,136 @@ class Reader:
             elif ts_diff <= -0.25:
                 comment[0] = "too early / extra note"
                 i += 1
-            review.append(comment)
+            self.review.append(comment)
         while i < len(notes):
-            review.append(["extra note", notes[i][0]])
+            self.review.append(["extra note", notes[i][0]])
             i += 1
         while j < len(compare_notes):
-            review.append(["missing note", compare_notes[j][0]])
+            self.review.append(["missing note", compare_notes[j][0]])
             j += 1
 
-        print(review)
+        print(self.review)
 
+    def plot(self):
+
+        def create_data(self, file):
+            last_time = 0.0
+
+            #List
+            list_freq = []
+            list_start_time = []
+            list_end_time = []
+
+            for msg in file.play():
+                
+                #Calculating time of message
+                curr_time = last_time + msg.time
+                last_time = curr_time
+
+                if msg.type == "note_on":
+                    list_freq.append(msg.note)
+                    list_start_time.append(curr_time)
+                else:
+                    list_end_time.append(curr_time)
+            
+            #Combine lists into 1 dataframe
+            list_of_tuples = list(zip(list_freq, list_start_time, list_end_time))
+            df = pd.DataFrame(list_of_tuples, columns=["Frequency", "Start_time", "End_time"])
+
+            return df
+
+        #Creating dataframes for both sets of data
+        played_notes_df = create_data(self, self.midi_file)
+        reference_notes_df = create_data(self, self.compare_midi_file)
+
+        output_file("plot.html")
+        
+        #Convert dataframes to columnDataSource to be used in Bokeh library
+        played_notes_source = ColumnDataSource(played_notes_df)
+        reference_notes_source = ColumnDataSource(reference_notes_df)
+
+
+        combined_notes_plot = figure(width=1000, height=1000, toolbar_location=None, title="Midi pitch of both set of notes")
+        #Adding played notes
+        combined_notes_plot.hbar(y="Frequency", left="Start_time", right="End_time", height=0.4, legend_label="Played notes", fill_color="red", source=played_notes_source)
+        #Adding reference notes
+        combined_notes_plot.hbar(y="Frequency", left="Start_time", right="End_time", height=0.4, legend_label="Reference notes", fill_color="blue", source=reference_notes_source)
+
+        #Plot legend settings
+        combined_notes_plot.legend.location = "top_left"
+        combined_notes_plot.legend.click_policy="mute"
+        #Axis titles
+        combined_notes_plot.xaxis.axis_label = "Time (seconds)"
+        combined_notes_plot.yaxis.axis_label = "Pitch (MIDI)"
+
+
+        show(combined_notes_plot)
+
+    def final_report(self):
+        
+        count=1
+
+        for list in self.review:
+            #Store HTML file contents as a string
+            with open("plot.html", "r") as html_file:
+                existing_content = html_file.read()
+
+            if list[0] == "good!":
+                new_content = f"""
+    <div>
+        <h2>Note #{count}</h2>
+        <p>Good!</p>
+    </div>
+"""
+            elif list[0] == "wrong note":
+                pitch_difference = list[2]-list[1]
+                new_content = f"""
+    <div>
+        <h2>Note #{count}</h2>
+        <p>
+        Wrong note played.
+        Pitch is off by {pitch_difference}
+        </p>
+    </div>
+"""                
+            elif list[0] == "too late/missed note":
+                new_content = f"""
+    <div>
+        <h2>Note #{count}</h2>
+        <p>
+        Too late/missed note
+        Note was played {list[3]} after original note
+        </p>
+    </div>
+"""                
+
+            elif list[0] == "extra note":
+                new_content = f"""
+    <div>
+        <h2>Note #{count}</h2>
+        <p>
+        Extra note played
+        </p>
+    </div>
+"""                
+
+            elif list[0] == "missing note":
+                new_content = f"""
+    <div>
+        <h2>Note #{count}</h2>
+        <p>
+        Missing Note!
+        </p>
+    </div>
+"""                
+            count+=1
+            
+            #Rewrite HTML with note message
+            modified_content = existing_content.replace("</body>", f"{new_content}\n</body>",1)
+        
+            #Store modified file back to HTML file
+            with open("plot.html", "w") as html_file:
+                html_file.write(modified_content)
 
 if __name__ == "__main__":
     args = sys.argv
@@ -90,3 +215,5 @@ if __name__ == "__main__":
     reader.open_file(filename=args[1])
     # reader.play()
     reader.compare()
+    reader.plot()
+    reader.final_report()
