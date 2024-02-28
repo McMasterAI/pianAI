@@ -13,15 +13,7 @@ def calculate_distance(points, tip, mid):
 
 #calclulate distance between pinky and thumb
 def calculate_pinky_thumb_distance(points, pinky_tip, thumb_tip):
-    x_pinky_tip, y_pinky_tip = points.landmark[pinky_tip].x, points.landmark[pinky_tip].y
-    x_thumb_tip, y_thumb_tip = points.landmark[thumb_tip].x, points.landmark[thumb_tip].y
-    distance = ((x_thumb_tip - x_pinky_tip)**2 + (y_thumb_tip - y_pinky_tip)**2)**0.5
-    return distance
-
-def main():
-
-    #initalizing some values
-    global distance_from_calibration_middle
+    x_pinky_tip, y_pinky_tip = points.landmark[pinky_tip].x, points.land
     global distance_from_calibration_pinky_thumb
     global distance_text
     distance_from_calibration_pinky_thumb = 0
