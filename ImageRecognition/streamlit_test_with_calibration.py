@@ -38,7 +38,7 @@ def main():
     hands = mp_hands.Hands()
 
     # Open the webcam
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     if not cap.isOpened():
         st.error("Error: Unable to open the webcam.")
@@ -88,7 +88,7 @@ def main():
                         remaining_time = int(calibration_time - elapsed_time)
                         callibration_message.empty()
                         #countdown
-                        distance_text.text(f"Calibrating... Please wait for {remaining_time} seconds.")
+                        
 
                         #read a frame from the webcam
                         ret, frame = cap.read()
@@ -105,6 +105,7 @@ def main():
 
                         #if the hands are detected on the screen, produce the skeleton
                         if results.multi_hand_landmarks:
+                            distance_text.text(f"Hands detected!\nCalibrating... Please wait for {remaining_time} seconds.")
                             for points in results.multi_hand_landmarks:
                                 #for each point from the skeleton draw it using the mediapipe function
                                 mp.solutions.drawing_utils.draw_landmarks(frame, points, mp_hands.HAND_CONNECTIONS)
@@ -118,6 +119,10 @@ def main():
                                 distance_from_calibration_pinky_thumb = calculate_pinky_thumb_distance(points,
                                                                                                     mp_hands.HandLandmark.PINKY_TIP.value,
                                                                                                     mp_hands.HandLandmark.THUMB_TIP.value)
+                        else:
+                            distance_text.text("Please place your entire hands in frame!\nRestarting Calibration")
+                            calibration_start_time = time.time()
+                            calibration_time = 6
 
                     else:
                         calibration_completed = True
@@ -195,7 +200,8 @@ def main():
                                         #distance_text.text("Hand Flat! Make sure you keep your fingers curved.")
                                     #if current_distance_pinky_thumb < (distance_from_calibration_pinky_thumb * 0.72) and current_distance_middle < (0.85 * distance_from_calibration_middle):
                                         #distance_text.text("Hand in proper curved position")
-                                    
+                    else: 
+                        distance_text.text("No hands detected")       
 
                 #display the frame in Streamlit
                 placeholder.image(frame, channels="BGR", use_column_width=True)
